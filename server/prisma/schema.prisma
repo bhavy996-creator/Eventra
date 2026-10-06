@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  name      String
+  email     String    @unique
+  password  String
+  role      String    @default("CUSTOMER")   // CUSTOMER | ORGANIZER | ADMIN
+  createdAt DateTime  @default(now())
+  events    Event[]
+  bookings  Booking[]
+}
+
+model Event {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String
+  category    String
+  venue       String
+  city        String
+  date        DateTime
+  imageUrl    String?
+  price       Int
+  vipPrice    Int
+  externalId  String?   @unique
+  organizerId Int
+  organizer   User      @relation(fields: [organizerId], references: [id])
+  seats       Seat[]
+  bookings    Booking[]
+  createdAt   DateTime  @default(now())
+}
+
+model Seat {
+  id        Int      @id @default(autoincrement())
+  eventId   Int
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  label     String                              // e.g. A1
+  row       String
+  number    Int
+  tier      String   @default("REGULAR")        // REGULAR | VIP
+  price     Int
+  status    String   @default("AVAILABLE")      // AVAILABLE | BOOKED
+  bookingId Int?
+  booking   Booking? @relation(fields: [bookingId], references: [id])
+  tickets   Ticket[]
+
+  @@unique([eventId, label])
+}
+
+model Booking {
+  id          Int      @id @default(autoincrement())
+  reference   String   @unique                  // e.g. EVT-8F3K2A
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  eventId     Int
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  totalAmount Int
+  status      String   @default("CONFIRMED")    // CONFIRMED | CANCELLED
+  createdAt   DateTime @default(now())
+  seats       Seat[]
+  tickets     Ticket[]
+}
+
+model Ticket {
+  id        Int       @id @default(autoincrement())
+  code      String    @unique                   // this value goes inside the QR
+  bookingId Int
+  booking   Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  seatId    Int
+  seat      Seat      @relation(fields: [seatId], references: [id])
+  status    String    @default("VALID")         // VALID | USED | CANCELLED
+  usedAt    DateTime?
+}
