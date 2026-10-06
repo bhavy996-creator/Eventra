@@ -1,3 +1,4 @@
+import eventRoutes from "./routes/events.js";
 import rateLimit from "express-rate-limit";
 import authRoutes from "./routes/auth.js";
 import "express-async-errors";
@@ -13,6 +14,7 @@ app.use(cors({ origin: process.env.CLIENT_URL }));
 app.use(express.json());   // lets the server read JSON sent by the browser
 app.use("/api/auth", rateLimit({ windowMs: 15 * 60 * 1000, max: 100 })); // blocks password-guessing
 app.use("/api/auth", authRoutes);
+app.use("/api/events", eventRoutes);
 
 // Test route: proves server + database both work
 app.get("/api/health", async (req, res) => {
